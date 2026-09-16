@@ -1,0 +1,1240 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#08100e">
+  <title>局域网快传</title>
+  <style>
+    :root {
+      --bg: #07100e;
+      --panel: #0d1815;
+      --panel-2: #111f1b;
+      --line: rgba(208, 255, 231, .12);
+      --line-strong: rgba(208, 255, 231, .2);
+      --text: #effff7;
+      --muted: #91a99e;
+      --green: #63f5aa;
+      --green-2: #2bd984;
+      --amber: #ffc86a;
+      --red: #ff7c7c;
+      --blue: #73c5ff;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .32);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 15% -10%, rgba(59, 218, 144, .17), transparent 31rem),
+        radial-gradient(circle at 100% 10%, rgba(69, 143, 255, .09), transparent 25rem),
+        var(--bg);
+    }
+    button, input, textarea { font: inherit; }
+    button, label[for="fileInput"] { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid rgba(99, 245, 170, .35);
+      outline-offset: 2px;
+    }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 42px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .mark {
+      display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto;
+      border: 1px solid rgba(99, 245, 170, .3); border-radius: 14px;
+      color: var(--green); background: linear-gradient(145deg, rgba(99, 245, 170, .16), rgba(99, 245, 170, .03));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .mark svg { width: 24px; height: 24px; }
+    h1 { margin: 0; font-size: clamp(1.18rem, 2vw, 1.42rem); letter-spacing: -.02em; }
+    .brand p { margin: 1px 0 0; color: var(--muted); font-size: .85rem; }
+    .privacy { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+    .privacy svg { width: 15px; color: var(--green); }
+
+    .grid { display: grid; grid-template-columns: minmax(330px, .78fr) minmax(0, 1.22fr); gap: 18px; align-items: start; }
+    .card { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(13, 24, 21, .9); box-shadow: var(--shadow); overflow: hidden; }
+    .card-body { padding: 24px; }
+    .eyebrow { margin: 0 0 7px; color: var(--green); font-size: .75rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 0; font-size: 1.3rem; letter-spacing: -.02em; }
+    .intro { position: relative; margin: 7px 0 21px; color: var(--muted); font-size: .92rem; }
+    .inline-help { position: static; display: inline-block; margin-left: 5px; vertical-align: .06em; }
+    .help-trigger { display: inline-grid; place-items: center; width: 19px; height: 19px; padding: 0; border: 1px solid rgba(99,245,170,.35); border-radius: 50%; color: var(--green); background: rgba(99,245,170,.06); font-size: .72rem; font-weight: 800; line-height: 1; cursor: help; }
+    .help-tooltip { position: absolute; top: calc(100% + 9px); left: 0; z-index: 5; width: min(330px, 100%); padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 11px; color: #dceee5; background: #14231e; box-shadow: 0 14px 38px rgba(0,0,0,.35); font-size: .75rem; font-weight: 500; line-height: 1.5; text-align: left; transform: translateY(-4px); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .16s, transform .16s, visibility .16s; }
+    .help-trigger:hover + .help-tooltip, .help-trigger:focus-visible + .help-tooltip, .help-trigger:focus + .help-tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
+
+    .status-stack { display: grid; gap: 9px; margin: 0 0 22px; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.018); }
+    .status-label { color: var(--muted); font-size: .84rem; }
+    .status-value { display: flex; align-items: center; gap: 7px; font-size: .84rem; font-weight: 650; text-align: right; }
+    .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: #5c6c65; box-shadow: 0 0 0 4px rgba(92,108,101,.1); }
+    .dot.ok { background: var(--green); box-shadow: 0 0 0 4px rgba(99,245,170,.11); }
+    .dot.wait { background: var(--amber); box-shadow: 0 0 0 4px rgba(255,200,106,.1); }
+    .dot.bad { background: var(--red); box-shadow: 0 0 0 4px rgba(255,124,124,.1); }
+
+    .phone-access { margin: -5px 0 21px; padding: 14px; border: 1px solid rgba(99,245,170,.22); border-radius: 15px; background: rgba(99,245,170,.045); }
+    .phone-access-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #c9f8df; font-size: .82rem; font-weight: 700; }
+    .phone-access-head svg { width: 16px; height: 16px; color: var(--green); }
+    .phone-address-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+    #phoneUrl { min-width: 0; padding: 9px 11px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; color: var(--green); background: #09130f; font-size: .79rem; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-address { min-height: 39px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; color: #d9eee3; background: #14231e; font-size: .76rem; font-weight: 700; cursor: pointer; }
+    .copy-address:hover:not(:disabled) { border-color: rgba(99,245,170,.5); color: var(--green); }
+    .copy-address:disabled { opacity: .45; cursor: not-allowed; }
+    .phone-help { margin: 8px 0 0; color: var(--muted); font-size: .73rem; }
+
+    .field { display: grid; gap: 8px; margin-top: 14px; }
+    .field > label, .field-label { color: #c6d8cf; font-size: .84rem; font-weight: 650; }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%; border: 1px solid var(--line-strong); border-radius: 14px; color: var(--text);
+      background: #09130f; transition: border-color .2s, box-shadow .2s;
+    }
+    input[type="text"], input[type="url"] { min-height: 48px; padding: 0 14px; }
+    input:hover, textarea:hover { border-color: rgba(208, 255, 231, .3); }
+    input:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 4px rgba(99,245,170,.08); outline: none; }
+    input::placeholder, textarea::placeholder { color: #5f746a; }
+    .code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; }
+    #roomCode { font-size: 1.25rem; font-weight: 750; letter-spacing: .28em; font-variant-numeric: tabular-nums; padding-left: 18px; }
+    .icon-btn { width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 14px; color: var(--text); background: var(--panel-2); cursor: pointer; }
+    .icon-btn:hover { border-color: rgba(99,245,170,.5); color: var(--green); }
+    .icon-btn svg { width: 19px; }
+    .help { color: var(--muted); font-size: .76rem; }
+
+    details.settings { margin-top: 17px; border-top: 1px solid var(--line); padding-top: 13px; }
+    summary { color: #b8ccc2; font-size: .84rem; cursor: pointer; user-select: none; }
+    summary::marker { color: var(--green); }
+    .settings-content { padding-top: 5px; }
+
+    .connection-log { margin-top: 15px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.018); }
+    .connection-log-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .connection-log-head h3 { margin: 0; color: #c7dbd1; font-size: .8rem; }
+    .connection-log-head span { color: var(--muted); font-size: .68rem; }
+    .connection-list { display: grid; gap: 7px; max-height: 118px; overflow: auto; overscroll-behavior: contain; }
+    .connection-empty { margin: 0; color: #6f867b; font-size: .74rem; }
+    .connection-empty[hidden] { display: none; }
+    .connection-event { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: var(--muted); font-size: .72rem; }
+    .connection-event::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .connection-event.error { color: #ffabab; }
+    .connection-event.error::before { background: var(--red); }
+    .connection-event time { color: #5e7268; font-size: .64rem; white-space: nowrap; }
+
+    .actions { display: grid; grid-template-columns: 1fr auto; gap: 9px; margin-top: 20px; }
+    .btn { min-height: 49px; border: 0; border-radius: 14px; padding: 0 18px; font-weight: 750; cursor: pointer; transition: transform .16s, filter .16s, opacity .16s; }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn-primary { color: #062013; background: linear-gradient(135deg, #7dffc0, #3ee998); box-shadow: 0 9px 28px rgba(62,233,152,.15); }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+    .btn-secondary { color: #d7e8df; background: #14231e; border: 1px solid var(--line-strong); }
+    .btn-secondary:hover:not(:disabled) { border-color: rgba(99,245,170,.42); }
+    .btn:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; }
+
+    .mini-note { display: flex; gap: 9px; margin: 18px 0 0; color: var(--muted); font-size: .77rem; }
+    .mini-note svg { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; color: var(--amber); }
+
+    .transfer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 24px 24px 19px; border-bottom: 1px solid var(--line); }
+    .peer-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 31px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .75rem; white-space: nowrap; background: rgba(255,255,255,.02); }
+    .peer-pill.connected { color: #baffe0; border-color: rgba(99,245,170,.25); background: rgba(99,245,170,.06); }
+
+    .composer { padding: 20px 24px 22px; border-bottom: 1px solid var(--line); }
+    .send-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+    .send-card { display: flex; min-width: 0; flex-direction: column; padding: 15px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.018); }
+    .send-card-head { display: flex; align-items: center; gap: 9px; min-height: 31px; margin-bottom: 11px; color: #dff2e8; font-size: .88rem; font-weight: 750; }
+    .send-card-icon { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; border-radius: 10px; color: var(--green); background: rgba(99,245,170,.08); }
+    .send-card-icon svg { width: 17px; height: 17px; }
+    textarea { display: block; min-height: 142px; max-height: 260px; flex: 1; resize: vertical; padding: 13px 14px; }
+    textarea:disabled { opacity: .54; }
+    .send-card-footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 9px; margin-top: 10px; }
+    .send-hint { color: var(--muted); font-size: .7rem; }
+    .send-card-footer .btn { min-width: 108px; min-height: 42px; padding: 0 13px; font-size: .82rem; }
+    .file-button { display: inline-grid; place-items: center; text-align: center; }
+    .file-button.disabled { opacity: .42; pointer-events: none; box-shadow: none; }
+
+    .drop-zone {
+      display: flex; min-height: 142px; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      padding: 15px; border: 1px dashed rgba(208,255,231,.24); border-radius: 14px;
+      color: inherit; text-align: center; background: #09130f; cursor: pointer; transition: border-color .2s, background .2s;
+    }
+    .drop-zone:hover, .drop-zone.drag { border-color: var(--green); background: rgba(99,245,170,.045); }
+    .drop-zone.disabled { opacity: .46; cursor: not-allowed; }
+    .drop-icon { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 13px; color: var(--green); background: rgba(99,245,170,.08); }
+    .drop-icon svg { width: 22px; }
+    .drop-title { display: block; font-size: .86rem; font-weight: 700; }
+    .drop-copy { display: block; margin-top: 3px; color: var(--muted); font-size: .7rem; }
+    #fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+    .feed { min-height: 270px; max-height: 430px; overflow: auto; padding: 19px 24px 24px; overscroll-behavior: contain; }
+    .feed-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    .feed-title h3 { margin: 0; font-size: .82rem; color: #c7dbd1; letter-spacing: .02em; }
+    .clear-btn { border: 0; padding: 4px; color: var(--muted); background: transparent; font-size: .73rem; cursor: pointer; }
+    .clear-btn:hover { color: var(--text); }
+    .empty { display: grid; place-items: center; min-height: 190px; text-align: center; color: var(--muted); }
+    .empty[hidden] { display: none; }
+    .empty svg { width: 32px; margin-bottom: 8px; color: #50655b; }
+    .empty p { margin: 0; font-size: .83rem; }
+    .activity-list { display: grid; gap: 11px; }
+    .item { padding: 13px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.018); }
+    .item-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .item-main { min-width: 0; flex: 1; }
+    .item-type { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; color: var(--muted); font-size: .7rem; }
+    .dir { color: var(--green); font-weight: 750; }
+    .dir.in { color: var(--blue); }
+    .item-time { color: #667a70; font-size: .69rem; white-space: nowrap; }
+    .message { margin: 0; color: #e8f7ef; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9rem; }
+    .message-footer { display: flex; justify-content: flex-end; margin-top: 8px; }
+    .message-copy { min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: rgba(255,255,255,.025); font-size: .7rem; font-weight: 700; cursor: pointer; }
+    .message-copy:hover { border-color: rgba(99,245,170,.4); color: var(--green); }
+    .file-name { overflow: hidden; color: #eafaf2; font-size: .87rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .file-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; color: var(--muted); font-size: .72rem; }
+    .progress { height: 5px; margin-top: 11px; overflow: hidden; border-radius: 99px; background: #1a2a24; }
+    .progress > span { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--green-2), var(--green)); transition: width .12s linear; }
+    .file-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+    .file-actions { display: flex; align-items: center; gap: 10px; }
+    .file-status { color: var(--muted); font-size: .7rem; }
+    .download { display: none; color: var(--green); font-size: .73rem; font-weight: 700; text-decoration: none; }
+    .download:hover { text-decoration: underline; }
+    .photo-save { display: none; padding: 0; border: 0; color: var(--blue); background: transparent; font-size: .73rem; font-weight: 700; cursor: pointer; }
+    .photo-save:hover { text-decoration: underline; }
+    .photo-save:disabled { opacity: .45; cursor: wait; text-decoration: none; }
+    .thumb { display: none; max-width: 160px; max-height: 110px; margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; object-fit: cover; }
+    .thumb.previewable { cursor: zoom-in; }
+    .system-item { padding: 7px 3px; color: var(--muted); font-size: .74rem; text-align: center; }
+    .system-item.error { color: #ffabab; }
+
+    .limitations { margin-top: 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(13,24,21,.72); }
+    .limitations summary { padding: 16px 18px; font-weight: 700; }
+    .limit-content { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 0 18px 18px; color: var(--muted); font-size: .82rem; }
+    .limit-content h3 { margin: 0 0 7px; color: #dceee5; font-size: .86rem; }
+    .limit-content p { margin: 0 0 8px; }
+    .limit-content ul { margin: 0; padding-left: 18px; }
+    code { color: #c6f8de; font: .88em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .protocol { grid-column: 1 / -1; padding-top: 1px; }
+    .protocol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+    .protocol-line { padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: #09130f; overflow-wrap: anywhere; }
+
+    .toast-region { position: fixed; right: 18px; bottom: 18px; z-index: 10; display: grid; gap: 8px; width: min(360px, calc(100% - 36px)); pointer-events: none; }
+    .toast { padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 13px; color: var(--text); background: #14231e; box-shadow: 0 18px 50px rgba(0,0,0,.35); font-size: .82rem; animation: toast-in .22s ease-out; }
+    .toast.error { border-color: rgba(255,124,124,.35); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(7px); } }
+
+    .image-viewer { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: rgba(1,7,5,.9); backdrop-filter: blur(10px); }
+    .image-viewer[hidden] { display: none; }
+    .viewer-panel { display: flex; width: min(760px, 100%); max-height: 100%; flex-direction: column; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 20px; background: #0d1815; box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+    .viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 13px 15px; border-bottom: 1px solid var(--line); }
+    .viewer-name { min-width: 0; overflow: hidden; color: #e8f7ef; font-size: .84rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .viewer-close { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: #14231e; font-size: 1.15rem; cursor: pointer; }
+    .viewer-stage { display: grid; min-height: 260px; flex: 1; place-items: center; overflow: auto; padding: 16px; background: #030806; }
+    .viewer-stage img { display: block; max-width: 100%; max-height: min(68vh, 760px); object-fit: contain; -webkit-touch-callout: default; user-select: auto; }
+
+    @media (max-width: 820px) {
+      .shell { width: min(100% - 22px, 680px); padding-top: 18px; }
+      header { margin-bottom: 16px; }
+      .privacy { display: none; }
+      .grid { grid-template-columns: 1fr; }
+      .card-body, .composer, .feed { padding-left: 18px; padding-right: 18px; }
+      .transfer-head { padding: 20px 18px 17px; }
+      .feed { max-height: none; }
+      .limit-content, .protocol-grid { grid-template-columns: 1fr; }
+      .protocol { grid-column: auto; }
+    }
+    @media (max-width: 640px) {
+      .send-options { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .shell { width: calc(100% - 16px); }
+      .brand p { display: none; }
+      .card-body { padding-top: 20px; padding-bottom: 20px; }
+      .actions { grid-template-columns: 1fr; }
+      .send-card-footer { grid-template-columns: 1fr; }
+      .send-card-footer .btn { width: 100%; }
+      .transfer-head { align-items: center; }
+      .transfer-head .intro { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 7.5 12 3l4 4.5M12 3v12"></path><path d="M5 12.5H3.8A1.8 1.8 0 0 0 2 14.3v4.9A1.8 1.8 0 0 0 3.8 21h16.4a1.8 1.8 0 0 0 1.8-1.8v-4.9a1.8 1.8 0 0 0-1.8-1.8H19"></path><path d="M16 16.5 12 21l-4-4.5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1>局域网快传</h1>
+          <p>同一网络，点对点传输</p>
+        </div>
+      </div>
+      <div class="privacy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10Z"></path><path d="m9 12 2 2 4-5"></path></svg>
+        绝对的隐私保护，仅通过浏览器本地运行
+      </div>
+    </header>
+
+    <section class="grid" aria-label="局域网传输工具">
+      <article class="card">
+        <div class="card-body">
+          <p class="eyebrow">连接设备</p>
+          <h2>输入相同的 4 位配对码</h2>
+          <p class="intro">
+            确保设备处于同一个局域网，并点击连接并等待配对，即可发送文件。
+            <span class="inline-help">
+              <button class="help-trigger" type="button" aria-label="连接帮助" aria-describedby="connectionHelp">?</button>
+              <span id="connectionHelp" class="help-tooltip" role="tooltip">如一直无法连接，请刷新页面。注意：刷新页面会导致未保存的传输记录清空。</span>
+            </span>
+          </p>
+
+          <div class="status-stack" aria-live="polite">
+            <div class="status-row">
+              <span class="status-label">传输网络</span>
+              <span class="status-value"><i id="signalDot" class="dot"></i><span id="signalStatus">未连接</span></span>
+            </div>
+            <div class="status-row">
+              <span class="status-label">另一台设备</span>
+              <span class="status-value"><i id="peerDot" class="dot"></i><span id="peerStatus">尚未配对</span></span>
+            </div>
+          </div>
+
+          <div class="phone-access">
+            <div class="phone-access-head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"></rect><path d="M10 18h4"></path></svg>
+              手机访问地址
+            </div>
+            <div class="phone-address-row">
+              <code id="phoneUrl">正在获取本机地址…</code>
+              <button id="copyPhoneUrl" class="copy-address" type="button" disabled>复制</button>
+            </div>
+            <p id="phoneHelp" class="phone-help">手机与电脑连接同一个 Wi-Fi 后，在手机浏览器打开此地址。</p>
+          </div>
+
+          <div class="field">
+            <label for="roomCode">配对码</label>
+            <div class="code-row">
+              <input id="roomCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}" placeholder="0000" aria-describedby="codeHelp">
+              <button id="randomCode" class="icon-btn" type="button" title="生成随机配对码" aria-label="生成随机配对码">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-4V3"></path><path d="M4.9 19.1a9 9 0 0 1 14.6-9.7L20 10"></path><path d="M4 17h4v4"></path><path d="M19.1 4.9A9 9 0 0 0 4.5 14.6L4 14"></path></svg>
+              </button>
+            </div>
+            <span id="codeHelp" class="help">请只输入 4 位数字，并在另一台设备上输入相同号码。</span>
+          </div>
+
+          <details class="settings">
+            <summary>连接设置</summary>
+            <div class="settings-content">
+              <div class="field">
+                <label for="wsEndpoint">传输网络地址</label>
+                <input id="wsEndpoint" type="url" inputmode="url" spellcheck="false" placeholder="ws://192.168.1.2:8787/ws">
+                <span class="help">用网页打开时默认连接当前主机的 <code>/ws</code>；直接打开文件时需填写局域网服务器地址。</span>
+              </div>
+              <div class="field">
+                <label for="iceServers">STUN 地址（可选）</label>
+                <input id="iceServers" type="text" inputmode="url" spellcheck="false" placeholder="留空，仅尝试局域网直连">
+                <span class="help">同一局域网通常留空即可；多个地址用英文逗号分隔。</span>
+              </div>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button id="connectButton" class="btn btn-primary" type="button">连接并等待配对</button>
+            <button id="disconnectButton" class="btn btn-secondary" type="button" disabled>断开</button>
+          </div>
+
+          <section class="connection-log" aria-label="连接记录">
+            <div class="connection-log-head">
+              <h3>连接记录</h3>
+              <span>仅保留最近 6 条</span>
+            </div>
+            <p id="connectionEmpty" class="connection-empty">尚无连接记录</p>
+            <div id="connectionList" class="connection-list" aria-live="polite"></div>
+          </section>
+
+          <p class="mini-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v6M12 7h.01"></path></svg>
+            <span>4 位码只是房间号，不是高强度密码。请只在可信局域网中使用。</span>
+          </p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="transfer-head">
+          <div>
+            <p class="eyebrow">传输面板</p>
+            <h2>发送文字与文件</h2>
+            <p class="intro">配对完成后，内容将直接在两台设备之间传输。</p>
+          </div>
+          <span id="peerPill" class="peer-pill"><i class="dot"></i><span>等待配对</span></span>
+        </div>
+
+        <div class="composer">
+          <div class="send-options">
+            <section class="send-card" aria-labelledby="textCardTitle">
+              <label id="textCardTitle" class="send-card-head" for="textMessage">
+                <span class="send-card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 10h16M4 15h10"></path><path d="M17 16v5M14.5 18.5H19.5"></path></svg>
+                </span>
+                发送文字
+              </label>
+              <textarea id="textMessage" maxlength="200000" placeholder="连接后可输入或粘贴文字…" disabled></textarea>
+              <div class="send-card-footer">
+                <span class="send-hint">Ctrl / ⌘ + Enter</span>
+                <button id="sendText" class="btn btn-primary" type="button" disabled>发送文字</button>
+              </div>
+            </section>
+
+            <section class="send-card" aria-labelledby="fileCardTitle">
+              <div id="fileCardTitle" class="send-card-head">
+                <span class="send-card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"></path></svg>
+                </span>
+                发送文件
+              </div>
+              <div id="dropZone" class="drop-zone disabled" role="button" aria-disabled="true" aria-label="拖入或选择文件" tabindex="-1">
+                <span class="drop-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5"></path><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>
+                </span>
+                <span>
+                  <span class="drop-title">拖入图片或文件</span>
+                  <span class="drop-copy">支持任意类型；大文件受浏览器内存限制</span>
+                </span>
+              </div>
+              <div class="send-card-footer">
+                <span class="send-hint">支持同时选择多个文件</span>
+                <label id="fileButton" class="btn btn-primary file-button disabled" for="fileInput" aria-disabled="true" tabindex="-1">选择文件</label>
+              </div>
+              <input id="fileInput" type="file" multiple disabled>
+            </section>
+          </div>
+        </div>
+
+        <div class="feed">
+          <div class="feed-title">
+            <h3>传输记录</h3>
+            <button id="clearFeed" class="clear-btn" type="button">清空记录</button>
+          </div>
+          <div id="emptyFeed" class="empty">
+            <div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m3 8 9 6 9-6"></path></svg>
+              <p>配对后，发送和接收记录会显示在这里</p>
+            </div>
+          </div>
+          <div id="activityList" class="activity-list" aria-live="polite"></div>
+        </div>
+      </article>
+    </section>
+
+    <details class="limitations">
+      <summary>查看技术限制与协议</summary>
+      <div class="limit-content">
+        <div>
+          <h3>必须知道的限制</h3>
+          <ul>
+            <li>纯静态 HTML 不能仅凭 4 位码在局域网中自动发现另一台设备。</li>
+            <li>本页面使用 WebRTC 数据通道传文件，但建立连接前仍需一个很小的 WebSocket 信令服务。</li>
+            <li>网页若通过 HTTPS 打开，信令地址也必须使用 <code>wss://</code>，否则浏览器会拦截混合内容。</li>
+            <li>文件在接收端内存中组装；超大文件的可用上限取决于设备和浏览器。</li>
+            <li>某些开启“客户端隔离”的 Wi-Fi 会阻止设备直连。</li>
+          </ul>
+        </div>
+        <div>
+          <h3>默认连接方式</h3>
+          <p>若本页由 <code>http(s)://主机:端口/</code> 提供，默认信令地址为同一主机、同一端口的 <code>/ws</code>。</p>
+          <p>若直接双击打开本 HTML，请在“连接设置”中填写运行于电脑上的局域网 WebSocket 地址，例如 <code>ws://192.168.1.2:8787/ws</code>。</p>
+          <p>WebSocket 只转发连接描述和网络候选；文字、图片和文件均走端到端加密的 WebRTC 通道。</p>
+        </div>
+        <div class="protocol">
+          <h3>兼容的最小信令协议（JSON）</h3>
+          <div class="protocol-grid">
+            <div class="protocol-line">客户端加入：<code>{type:"join", room:"1234", clientId:"…"}</code></div>
+            <div class="protocol-line">服务端确认：<code>{type:"joined", peerCount:1}</code></div>
+            <div class="protocol-line">通知先加入者：<code>{type:"peer-joined"}</code></div>
+            <div class="protocol-line">转发信令：<code>{type:"signal", room:"1234", clientId:"…", data:{…}}</code></div>
+            <div class="protocol-line">对方离开：<code>{type:"peer-left"}</code></div>
+            <div class="protocol-line">规则：每个房间最多 2 个客户端；<code>signal</code> 只转发给同房间另一端。</div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <div id="imageViewer" class="image-viewer" role="dialog" aria-modal="true" aria-labelledby="viewerName" hidden>
+    <div class="viewer-panel">
+      <div class="viewer-head">
+        <div id="viewerName" class="viewer-name">图片预览</div>
+        <button id="viewerClose" class="viewer-close" type="button" aria-label="关闭图片预览">×</button>
+      </div>
+      <div class="viewer-stage">
+        <img id="viewerImage" alt="接收到的图片大图预览">
+      </div>
+    </div>
+  </div>
+
+  <div id="toastRegion" class="toast-region" aria-live="assertive"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const ui = {
+        roomCode: $("roomCode"), wsEndpoint: $("wsEndpoint"), iceServers: $("iceServers"),
+        randomCode: $("randomCode"), connect: $("connectButton"), disconnect: $("disconnectButton"),
+        signalStatus: $("signalStatus"), signalDot: $("signalDot"), peerStatus: $("peerStatus"), peerDot: $("peerDot"), peerPill: $("peerPill"),
+        phoneUrl: $("phoneUrl"), copyPhoneUrl: $("copyPhoneUrl"), phoneHelp: $("phoneHelp"),
+        text: $("textMessage"), sendText: $("sendText"), fileInput: $("fileInput"), fileButton: $("fileButton"), dropZone: $("dropZone"),
+        empty: $("emptyFeed"), list: $("activityList"), clear: $("clearFeed"),
+        connectionEmpty: $("connectionEmpty"), connectionList: $("connectionList"), toasts: $("toastRegion"),
+        imageViewer: $("imageViewer"), viewerImage: $("viewerImage"), viewerName: $("viewerName"),
+        viewerClose: $("viewerClose")
+      };
+
+      const CHUNK_SIZE = 16 * 1024;
+      const HEADER_SIZE = 36;
+      const HIGH_WATER_MARK = 4 * 1024 * 1024;
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      const clientId = makeId();
+      const incomingFiles = new Map();
+      const objectUrls = new Set();
+      const sendQueue = [];
+      let sending = false;
+      let socket = null;
+      let peer = null;
+      let channel = null;
+      let room = "";
+      let intentionalClose = false;
+      let pendingCandidates = [];
+
+      function makeId() {
+        if (globalThis.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+        const seed = `${Date.now()}-${Math.random()}-${Math.random()}`.replace(/\D/g, "").padEnd(32, "0").slice(0, 32);
+        return `${seed.slice(0,8)}-${seed.slice(8,12)}-4${seed.slice(13,16)}-a${seed.slice(17,20)}-${seed.slice(20,32)}`;
+      }
+
+      function defaultEndpoint() {
+        if (location.protocol === "http:" || location.protocol === "https:") {
+          return `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+        }
+        return "ws://192.168.1.2:8787/ws";
+      }
+
+      function loadPreferences() {
+        ui.wsEndpoint.value = localStorage.getItem("lanDrop.ws") || defaultEndpoint();
+        ui.iceServers.value = localStorage.getItem("lanDrop.ice") || "";
+        ui.roomCode.value = localStorage.getItem("lanDrop.room") || "";
+      }
+
+      function savePreferences() {
+        localStorage.setItem("lanDrop.ws", ui.wsEndpoint.value.trim());
+        localStorage.setItem("lanDrop.ice", ui.iceServers.value.trim());
+        localStorage.setItem("lanDrop.room", ui.roomCode.value.trim());
+      }
+
+      async function loadPhoneAddress() {
+        if (location.protocol !== "http:" && location.protocol !== "https:") {
+          ui.phoneUrl.textContent = "请先双击启动局域网快传";
+          ui.phoneHelp.textContent = "启动后请通过自动打开的网页使用本工具。";
+          return;
+        }
+
+        const isLocalComputer = location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === "::1";
+        if (!isLocalComputer) {
+          setPhoneAddress(`${location.origin}/`);
+          return;
+        }
+
+        try {
+          const response = await fetch("/info", { cache: "no-store" });
+          if (!response.ok) throw new Error("address unavailable");
+          const data = await response.json();
+          const address = Array.isArray(data.urls) ? data.urls.find(value => typeof value === "string") : "";
+          if (!address) throw new Error("address unavailable");
+          setPhoneAddress(address);
+        } catch {
+          ui.phoneUrl.textContent = "未能获取手机访问地址";
+          ui.phoneHelp.textContent = "请关闭启动窗口后重新双击启动文件。";
+        }
+      }
+
+      function setPhoneAddress(address) {
+        ui.phoneUrl.textContent = address;
+        ui.phoneUrl.title = address;
+        ui.copyPhoneUrl.disabled = false;
+      }
+
+      async function copyPhoneAddress() {
+        const address = ui.phoneUrl.textContent;
+        if (!address || ui.copyPhoneUrl.disabled) return;
+        try {
+          await writeClipboard(address);
+          toast("手机访问地址已复制");
+        } catch {
+          toast("复制失败，请长按地址手动复制", true);
+        }
+      }
+
+      async function writeClipboard(value) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(value);
+          return;
+        }
+        const input = document.createElement("textarea");
+        input.value = value;
+        input.setAttribute("readonly", "");
+        input.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand("copy");
+        input.remove();
+        if (!copied) throw new Error("copy failed");
+      }
+
+      function openImageViewer(url, name) {
+        ui.viewerImage.src = url;
+        ui.viewerName.textContent = name;
+        ui.imageViewer.hidden = false;
+        document.body.style.overflow = "hidden";
+        ui.viewerClose.focus();
+      }
+
+      function closeImageViewer() {
+        if (ui.imageViewer.hidden) return;
+        ui.imageViewer.hidden = true;
+        ui.viewerImage.removeAttribute("src");
+        document.body.style.overflow = "";
+      }
+
+      function setStatus(kind, text, state) {
+        const label = kind === "signal" ? ui.signalStatus : ui.peerStatus;
+        const dot = kind === "signal" ? ui.signalDot : ui.peerDot;
+        label.textContent = text;
+        dot.className = `dot${state ? ` ${state}` : ""}`;
+      }
+
+      function setTransferEnabled(enabled) {
+        ui.text.disabled = !enabled;
+        ui.sendText.disabled = !enabled;
+        ui.fileInput.disabled = !enabled;
+        ui.fileButton.classList.toggle("disabled", !enabled);
+        ui.fileButton.setAttribute("aria-disabled", String(!enabled));
+        ui.fileButton.tabIndex = enabled ? 0 : -1;
+        ui.dropZone.classList.toggle("disabled", !enabled);
+        ui.dropZone.setAttribute("aria-disabled", String(!enabled));
+        ui.dropZone.tabIndex = enabled ? 0 : -1;
+        ui.peerPill.classList.toggle("connected", enabled);
+        ui.peerPill.innerHTML = `<i class="dot${enabled ? " ok" : ""}"></i><span>${enabled ? "已安全直连" : "等待配对"}</span>`;
+      }
+
+      function toast(message, isError = false) {
+        const node = document.createElement("div");
+        node.className = `toast${isError ? " error" : ""}`;
+        node.textContent = message;
+        ui.toasts.appendChild(node);
+        setTimeout(() => node.remove(), 4200);
+      }
+
+      function showFeed() { ui.empty.hidden = true; }
+      function nowText() { return new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date()); }
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes) || bytes < 0) return "未知大小";
+        if (bytes === 0) return "0 B";
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        const value = bytes / Math.pow(1024, index);
+        return `${value.toFixed(index === 0 || value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${units[index]}`;
+      }
+
+      function addSystem(message, isError = false) {
+        ui.connectionEmpty.hidden = true;
+        const item = document.createElement("div");
+        item.className = `connection-event${isError ? " error" : ""}`;
+        const text = document.createElement("span");
+        text.textContent = message;
+        const time = document.createElement("time");
+        time.textContent = nowText();
+        item.append(text, time);
+        ui.connectionList.appendChild(item);
+        while (ui.connectionList.children.length > 6) ui.connectionList.firstElementChild.remove();
+        item.scrollIntoView({ block: "nearest" });
+      }
+
+      function addText(direction, text) {
+        showFeed();
+        const item = document.createElement("article");
+        item.className = "item";
+        const head = document.createElement("div");
+        head.className = "item-head";
+        const main = document.createElement("div");
+        main.className = "item-main";
+        const type = document.createElement("div");
+        type.className = "item-type";
+        const dir = document.createElement("span");
+        dir.className = `dir${direction === "接收" ? " in" : ""}`;
+        dir.textContent = direction;
+        type.append(dir, document.createTextNode("文字消息"));
+        const message = document.createElement("p");
+        message.className = "message";
+        message.textContent = text;
+        main.append(type, message);
+        const time = document.createElement("time");
+        time.className = "item-time";
+        time.textContent = nowText();
+        head.append(main, time);
+        const footer = document.createElement("div");
+        footer.className = "message-footer";
+        const copy = document.createElement("button");
+        copy.className = "message-copy";
+        copy.type = "button";
+        copy.textContent = "复制文字";
+        copy.setAttribute("aria-label", "复制这条文字消息");
+        copy.addEventListener("click", async () => {
+          try {
+            await writeClipboard(text);
+            copy.textContent = "已复制";
+            toast("文字消息已复制");
+            setTimeout(() => { copy.textContent = "复制文字"; }, 1600);
+          } catch {
+            toast("复制失败，请手动选择文字", true);
+          }
+        });
+        footer.appendChild(copy);
+        item.append(head, footer);
+        ui.list.appendChild(item);
+        item.scrollIntoView({ block: "nearest" });
+      }
+
+      function addFile(direction, meta) {
+        showFeed();
+        const item = document.createElement("article");
+        item.className = "item";
+        const head = document.createElement("div");
+        head.className = "item-head";
+        const main = document.createElement("div");
+        main.className = "item-main";
+        const type = document.createElement("div");
+        type.className = "item-type";
+        const dir = document.createElement("span");
+        dir.className = `dir${direction === "接收" ? " in" : ""}`;
+        dir.textContent = direction;
+        type.append(dir, document.createTextNode(meta.mime && meta.mime.startsWith("image/") ? "图片" : "文件"));
+        const name = document.createElement("div");
+        name.className = "file-name";
+        name.title = meta.name;
+        name.textContent = meta.name;
+        const details = document.createElement("div");
+        details.className = "file-meta";
+        details.textContent = `${formatBytes(meta.size)} · ${meta.mime || "未知类型"}`;
+        main.append(type, name, details);
+        const time = document.createElement("time");
+        time.className = "item-time";
+        time.textContent = nowText();
+        head.append(main, time);
+        const progress = document.createElement("div");
+        progress.className = "progress";
+        const bar = document.createElement("span");
+        progress.appendChild(bar);
+        const footer = document.createElement("div");
+        footer.className = "file-footer";
+        const status = document.createElement("span");
+        status.className = "file-status";
+        status.textContent = direction === "发送" ? "等待发送" : "准备接收";
+        const download = document.createElement("a");
+        download.className = "download";
+        download.textContent = "保存文件";
+        download.download = meta.name;
+        const photoSave = document.createElement("button");
+        photoSave.className = "photo-save";
+        photoSave.type = "button";
+        photoSave.textContent = "保存到相册";
+        const fileActions = document.createElement("div");
+        fileActions.className = "file-actions";
+        fileActions.append(photoSave, download);
+        footer.append(status, fileActions);
+        const thumb = document.createElement("img");
+        thumb.className = "thumb";
+        thumb.alt = `${meta.name} 预览`;
+        item.append(head, progress, footer, thumb);
+        ui.list.appendChild(item);
+        item.scrollIntoView({ block: "nearest" });
+        return { item, bar, status, download, photoSave, thumb, details };
+      }
+
+      function updateFileView(view, done, total, statusText) {
+        const percent = total === 0 ? 100 : Math.min(100, Math.round((done / total) * 100));
+        view.bar.style.width = `${percent}%`;
+        view.status.textContent = `${statusText} · ${percent}%`;
+      }
+
+      function parseEndpoint(value) {
+        let parsed;
+        try { parsed = new URL(value); } catch { throw new Error("信令地址格式不正确"); }
+        if (!/^wss?:$/.test(parsed.protocol)) throw new Error("信令地址必须以 ws:// 或 wss:// 开头");
+        if (location.protocol === "https:" && parsed.protocol !== "wss:") throw new Error("HTTPS 页面必须使用 wss:// 信令地址");
+        return parsed.href;
+      }
+
+      function connect() {
+        const code = ui.roomCode.value.trim();
+        if (!/^\d{4}$/.test(code)) {
+          toast("请输入 4 位数字配对码", true);
+          ui.roomCode.focus();
+          return;
+        }
+
+        let endpoint;
+        try { endpoint = parseEndpoint(ui.wsEndpoint.value.trim()); }
+        catch (error) { toast(error.message, true); ui.wsEndpoint.focus(); return; }
+
+        if (!("RTCPeerConnection" in window) || !("WebSocket" in window)) {
+          toast("当前浏览器不支持 WebRTC 或 WebSocket，请换用较新的浏览器", true);
+          return;
+        }
+
+        room = code;
+        intentionalClose = false;
+        savePreferences();
+        ui.connect.disabled = true;
+        ui.roomCode.disabled = true;
+        ui.wsEndpoint.disabled = true;
+        ui.iceServers.disabled = true;
+        setStatus("signal", "正在连接…", "wait");
+        setStatus("peer", "等待配对", "wait");
+
+        try { socket = new WebSocket(endpoint); }
+        catch (error) { connectionFailed(`无法创建连接：${error.message}`); return; }
+
+        socket.addEventListener("open", () => {
+          setStatus("signal", "已连接", "ok");
+          ui.disconnect.disabled = false;
+          sendSocket({ type: "join", room, clientId });
+          addSystem(`已进入配对房间 ${room}，等待另一台设备`);
+        });
+        socket.addEventListener("message", handleSignalMessage);
+        socket.addEventListener("error", () => {
+          if (!intentionalClose) toast("传输网络连接出错，请检查地址和启动窗口", true);
+        });
+        socket.addEventListener("close", () => {
+          const wasIntentional = intentionalClose;
+          closePeer();
+          socket = null;
+          resetConnectionControls();
+          if (!wasIntentional) {
+            setStatus("signal", "连接已中断", "bad");
+            addSystem("传输网络连接已中断", true);
+          } else {
+            setStatus("signal", "未连接", "");
+          }
+        });
+      }
+
+      function connectionFailed(message) {
+        toast(message, true);
+        setStatus("signal", "连接失败", "bad");
+        resetConnectionControls();
+      }
+
+      function resetConnectionControls() {
+        ui.connect.disabled = false;
+        ui.disconnect.disabled = true;
+        ui.roomCode.disabled = false;
+        ui.wsEndpoint.disabled = false;
+        ui.iceServers.disabled = false;
+        setStatus("peer", "尚未配对", "");
+        setTransferEnabled(false);
+      }
+
+      function disconnect() {
+        intentionalClose = true;
+        if (socket && socket.readyState === WebSocket.OPEN) sendSocket({ type: "leave", room, clientId });
+        if (socket) socket.close(1000, "user left");
+        else resetConnectionControls();
+        closePeer();
+        addSystem("已断开连接");
+      }
+
+      function sendSocket(payload) {
+        if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(payload));
+      }
+
+      async function handleSignalMessage(event) {
+        let message;
+        try { message = JSON.parse(event.data); }
+        catch { return; }
+
+        try {
+          switch (message.type) {
+            case "joined":
+              setStatus("peer", Number(message.peerCount) > 1 ? "正在建立直连…" : "等待另一台设备", "wait");
+              break;
+            case "peer-joined":
+              setStatus("peer", "正在建立直连…", "wait");
+              await createOffer();
+              break;
+            case "signal":
+              await receiveSignal(message.data || message.payload || {});
+              break;
+            case "peer-left":
+              closePeer();
+              setStatus("peer", "对方已离开，继续等待", "wait");
+              addSystem("另一台设备已离开；当前房间仍在等待配对");
+              break;
+            case "full":
+              toast("此配对码已有两台设备，请更换配对码", true);
+              disconnect();
+              break;
+            case "error":
+              toast(message.message || "传输网络返回错误", true);
+              break;
+          }
+        } catch (error) {
+          console.error(error);
+          toast(`建立直连失败：${error.message}`, true);
+          setStatus("peer", "直连失败", "bad");
+        }
+      }
+
+      function getIceConfiguration() {
+        const urls = ui.iceServers.value.split(",").map(v => v.trim()).filter(Boolean);
+        return { iceServers: urls.length ? [{ urls }] : [] };
+      }
+
+      function ensurePeer() {
+        if (peer) return peer;
+        pendingCandidates = [];
+        peer = new RTCPeerConnection(getIceConfiguration());
+        peer.addEventListener("icecandidate", (event) => {
+          if (event.candidate) sendSocket({ type: "signal", room, clientId, data: { candidate: event.candidate } });
+        });
+        peer.addEventListener("datachannel", (event) => setupChannel(event.channel));
+        peer.addEventListener("connectionstatechange", () => {
+          if (!peer) return;
+          const state = peer.connectionState;
+          if (state === "connected") {
+            setStatus("peer", "已安全直连", "ok");
+          } else if (state === "failed") {
+            setStatus("peer", "直连失败", "bad");
+            setTransferEnabled(false);
+            toast("设备直连失败；请确认处于同一局域网且未开启客户端隔离", true);
+          } else if (state === "disconnected") {
+            setStatus("peer", "连接暂时中断", "wait");
+            setTransferEnabled(false);
+          }
+        });
+        return peer;
+      }
+
+      async function createOffer() {
+        const pc = ensurePeer();
+        if (!channel) setupChannel(pc.createDataChannel("lan-drop", { ordered: true }));
+        await pc.setLocalDescription(await pc.createOffer());
+        sendSocket({ type: "signal", room, clientId, data: { description: pc.localDescription } });
+      }
+
+      async function receiveSignal(data) {
+        const pc = ensurePeer();
+        if (data.description) {
+          await pc.setRemoteDescription(data.description);
+          while (pendingCandidates.length) await pc.addIceCandidate(pendingCandidates.shift());
+          if (data.description.type === "offer") {
+            await pc.setLocalDescription(await pc.createAnswer());
+            sendSocket({ type: "signal", room, clientId, data: { description: pc.localDescription } });
+          }
+        } else if (data.candidate) {
+          if (pc.remoteDescription) await pc.addIceCandidate(data.candidate);
+          else pendingCandidates.push(data.candidate);
+        }
+      }
+
+      function setupChannel(nextChannel) {
+        if (channel && channel !== nextChannel) channel.close();
+        channel = nextChannel;
+        channel.binaryType = "arraybuffer";
+        channel.bufferedAmountLowThreshold = 512 * 1024;
+        channel.addEventListener("open", () => {
+          setStatus("peer", "已安全直连", "ok");
+          setTransferEnabled(true);
+          addSystem("配对成功，可以发送文字和文件");
+          toast("配对成功");
+          processQueue();
+        });
+        channel.addEventListener("message", handleDataMessage);
+        channel.addEventListener("close", () => {
+          setTransferEnabled(false);
+          if (socket && socket.readyState === WebSocket.OPEN) setStatus("peer", "直连已关闭，继续等待", "wait");
+        });
+        channel.addEventListener("error", () => toast("数据通道发生错误", true));
+      }
+
+      function closePeer() {
+        setTransferEnabled(false);
+        pendingCandidates = [];
+        if (channel) { try { channel.close(); } catch {} channel = null; }
+        if (peer) { try { peer.close(); } catch {} peer = null; }
+      }
+
+      function dataChannelReady() { return channel && channel.readyState === "open"; }
+
+      function sendJson(payload) {
+        if (!dataChannelReady()) throw new Error("设备尚未完成配对");
+        channel.send(JSON.stringify(payload));
+      }
+
+      function sendTextMessage() {
+        const text = ui.text.value.trim();
+        if (!text) return;
+        try {
+          sendJson({ kind: "text", text, sentAt: Date.now() });
+          addText("发送", text);
+          ui.text.value = "";
+        } catch (error) { toast(error.message, true); }
+      }
+
+      function handleDataMessage(event) {
+        if (typeof event.data === "string") {
+          let data;
+          try { data = JSON.parse(event.data); } catch { return; }
+          if (data.kind === "text" && typeof data.text === "string") {
+            addText("接收", data.text);
+            toast("收到一条文字消息");
+          } else if (data.kind === "file-meta") {
+            startIncomingFile(data);
+          } else if (data.kind === "file-end") {
+            finishIncomingFile(data.id);
+          }
+          return;
+        }
+        receiveBinaryChunk(event.data);
+      }
+
+      function startIncomingFile(meta) {
+        if (!meta.id || typeof meta.name !== "string" || !Number.isFinite(meta.size)) return;
+        const safeMeta = { id: meta.id, name: meta.name, size: Math.max(0, meta.size), mime: String(meta.mime || "application/octet-stream") };
+        incomingFiles.set(meta.id, { ...safeMeta, chunks: [], received: 0, view: addFile("接收", safeMeta), ended: false });
+      }
+
+      function receiveBinaryChunk(buffer) {
+        if (!(buffer instanceof ArrayBuffer) || buffer.byteLength < HEADER_SIZE) return;
+        const bytes = new Uint8Array(buffer);
+        const id = decoder.decode(bytes.subarray(0, HEADER_SIZE));
+        const record = incomingFiles.get(id);
+        if (!record) return;
+        const chunk = buffer.slice(HEADER_SIZE);
+        record.chunks.push(chunk);
+        record.received += chunk.byteLength;
+        updateFileView(record.view, record.received, record.size, "接收中");
+        if (record.ended && record.received >= record.size) completeIncomingFile(record);
+      }
+
+      function finishIncomingFile(id) {
+        const record = incomingFiles.get(id);
+        if (!record) return;
+        record.ended = true;
+        if (record.received >= record.size) completeIncomingFile(record);
+      }
+
+      function detectImageMime(chunks, declaredMime, name) {
+        const bytes = chunks.length ? new Uint8Array(chunks[0]) : new Uint8Array();
+        if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+        if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
+        if (bytes.length >= 6 && decoder.decode(bytes.subarray(0, 6)).startsWith("GIF8")) return "image/gif";
+        if (bytes.length >= 12 && decoder.decode(bytes.subarray(0, 4)) === "RIFF" && decoder.decode(bytes.subarray(8, 12)) === "WEBP") return "image/webp";
+        if (bytes.length >= 12 && decoder.decode(bytes.subarray(4, 8)) === "ftyp") {
+          const brand = decoder.decode(bytes.subarray(8, 12)).toLowerCase();
+          if (["heic", "heix", "hevc", "hevx", "mif1", "msf1"].includes(brand)) return "image/heic";
+          if (["avif", "avis"].includes(brand)) return "image/avif";
+        }
+        const extension = String(name || "").split(".").pop().toLowerCase();
+        const byExtension = {
+          jpg: "image/jpeg", jpeg: "image/jpeg", jfif: "image/jpeg", png: "image/png",
+          gif: "image/gif", webp: "image/webp", heic: "image/heic", heif: "image/heif",
+          avif: "image/avif", bmp: "image/bmp", tif: "image/tiff", tiff: "image/tiff"
+        };
+        if (byExtension[extension]) return byExtension[extension];
+        return declaredMime || "application/octet-stream";
+      }
+
+      function createAlbumImage(sourceUrl, sourceMime) {
+        return new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = image.naturalWidth;
+              canvas.height = image.naturalHeight;
+              const context = canvas.getContext("2d");
+              if (!context || !canvas.width || !canvas.height) throw new Error("image unavailable");
+              context.drawImage(image, 0, 0);
+              const outputMime = ["image/jpeg", "image/heic", "image/heif"].includes(sourceMime)
+                ? "image/jpeg"
+                : "image/png";
+              canvas.toBlob((albumBlob) => {
+                canvas.width = 1;
+                canvas.height = 1;
+                if (!albumBlob) { reject(new Error("image conversion failed")); return; }
+                const albumUrl = URL.createObjectURL(albumBlob);
+                objectUrls.add(albumUrl);
+                resolve(albumUrl);
+              }, outputMime, .96);
+            } catch (error) {
+              reject(error);
+            }
+          };
+          image.onerror = () => reject(new Error("image decode failed"));
+          image.src = sourceUrl;
+        });
+      }
+
+      function completeIncomingFile(record) {
+        if (!incomingFiles.has(record.id)) return;
+        record.mime = detectImageMime(record.chunks, record.mime, record.name);
+        const blob = new Blob(record.chunks, { type: record.mime });
+        const url = URL.createObjectURL(blob);
+        objectUrls.add(url);
+        record.view.download.href = url;
+        record.view.download.style.display = "inline";
+        record.view.details.textContent = `${formatBytes(record.size)} · ${record.mime || "未知类型"}`;
+        record.view.status.textContent = `接收完成 · ${formatBytes(record.size)}`;
+        record.view.bar.style.width = "100%";
+        if (record.mime.startsWith("image/")) {
+          record.view.thumb.src = url;
+          record.view.thumb.style.display = "block";
+          record.view.thumb.classList.add("previewable");
+          record.view.thumb.tabIndex = 0;
+          record.view.thumb.setAttribute("role", "button");
+          record.view.thumb.setAttribute("aria-label", `打开 ${record.name} 的大图预览`);
+          record.view.photoSave.style.display = "inline";
+          record.view.photoSave.disabled = true;
+          let albumUrl = url;
+          const openPreview = () => openImageViewer(albumUrl, record.name);
+          record.view.photoSave.addEventListener("click", openPreview);
+          record.view.thumb.addEventListener("click", openPreview);
+          record.view.thumb.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openPreview(); }
+          });
+          createAlbumImage(url, record.mime)
+            .then((safeUrl) => { albumUrl = safeUrl; })
+            .catch(() => {})
+            .finally(() => { record.view.photoSave.disabled = false; });
+        }
+        record.chunks.length = 0;
+        incomingFiles.delete(record.id);
+        toast(`已收到：${record.name}`);
+      }
+
+      function enqueueFiles(files) {
+        if (!dataChannelReady()) { toast("请先完成配对", true); return; }
+        for (const file of files) sendQueue.push(file);
+        processQueue();
+      }
+
+      async function processQueue() {
+        if (sending || !dataChannelReady()) return;
+        sending = true;
+        while (sendQueue.length && dataChannelReady()) {
+          const file = sendQueue.shift();
+          await sendFile(file);
+        }
+        sending = false;
+      }
+
+      async function sendFile(file) {
+        const id = makeId();
+        const meta = { id, name: file.name, size: file.size, mime: file.type || "application/octet-stream", lastModified: file.lastModified };
+        const view = addFile("发送", meta);
+        try {
+          sendJson({ kind: "file-meta", ...meta });
+          if (file.size === 0) {
+            sendJson({ kind: "file-end", id });
+            updateFileView(view, 0, 0, "发送完成");
+            view.status.textContent = "发送完成 · 0 B";
+            return;
+          }
+          let offset = 0;
+          while (offset < file.size) {
+            if (!dataChannelReady()) throw new Error("连接中断");
+            await waitForBuffer();
+            const chunk = new Uint8Array(await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer());
+            const packet = new Uint8Array(HEADER_SIZE + chunk.byteLength);
+            packet.set(encoder.encode(id), 0);
+            packet.set(chunk, HEADER_SIZE);
+            channel.send(packet.buffer);
+            offset += chunk.byteLength;
+            updateFileView(view, offset, file.size, "发送中");
+          }
+          sendJson({ kind: "file-end", id });
+          view.status.textContent = `发送完成 · ${formatBytes(file.size)}`;
+          view.bar.style.width = "100%";
+        } catch (error) {
+          view.status.textContent = `发送失败：${error.message}`;
+          view.bar.style.background = "var(--red)";
+          toast(`${file.name} 发送失败`, true);
+        }
+      }
+
+      function waitForBuffer() {
+        if (!dataChannelReady() || channel.bufferedAmount <= HIGH_WATER_MARK) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => { cleanup(); reject(new Error("发送缓冲区等待超时")); }, 30000);
+          const onLow = () => { cleanup(); resolve(); };
+          const onClose = () => { cleanup(); reject(new Error("连接中断")); };
+          const cleanup = () => {
+            clearTimeout(timeout);
+            channel && channel.removeEventListener("bufferedamountlow", onLow);
+            channel && channel.removeEventListener("close", onClose);
+          };
+          channel.addEventListener("bufferedamountlow", onLow, { once: true });
+          channel.addEventListener("close", onClose, { once: true });
+        });
+      }
+
+      ui.roomCode.addEventListener("input", () => { ui.roomCode.value = ui.roomCode.value.replace(/\D/g, "").slice(0, 4); });
+      ui.roomCode.addEventListener("keydown", (event) => { if (event.key === "Enter" && !ui.connect.disabled) connect(); });
+      ui.randomCode.addEventListener("click", () => {
+        const values = new Uint16Array(1);
+        if (globalThis.crypto && crypto.getRandomValues) crypto.getRandomValues(values);
+        else values[0] = Math.floor(Math.random() * 65536);
+        ui.roomCode.value = String(1000 + (values[0] % 9000));
+        ui.roomCode.dispatchEvent(new Event("input"));
+      });
+      ui.connect.addEventListener("click", connect);
+      ui.disconnect.addEventListener("click", disconnect);
+      ui.copyPhoneUrl.addEventListener("click", copyPhoneAddress);
+      ui.sendText.addEventListener("click", sendTextMessage);
+      ui.text.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); sendTextMessage(); }
+      });
+      ui.fileInput.addEventListener("change", () => { enqueueFiles(ui.fileInput.files); ui.fileInput.value = ""; });
+      ui.dropZone.addEventListener("click", () => { if (!ui.fileInput.disabled) ui.fileInput.click(); });
+      ui.dropZone.addEventListener("keydown", (event) => {
+        if ((event.key === "Enter" || event.key === " ") && !ui.fileInput.disabled) { event.preventDefault(); ui.fileInput.click(); }
+      });
+      for (const name of ["dragenter", "dragover"]) {
+        ui.dropZone.addEventListener(name, (event) => { event.preventDefault(); if (!ui.fileInput.disabled) ui.dropZone.classList.add("drag"); });
+      }
+      for (const name of ["dragleave", "drop"]) {
+        ui.dropZone.addEventListener(name, (event) => { event.preventDefault(); ui.dropZone.classList.remove("drag"); });
+      }
+      ui.dropZone.addEventListener("drop", (event) => { if (!ui.fileInput.disabled) enqueueFiles(event.dataTransfer.files); });
+      ui.clear.addEventListener("click", () => { ui.list.replaceChildren(); ui.empty.hidden = false; });
+      ui.viewerClose.addEventListener("click", closeImageViewer);
+      ui.imageViewer.addEventListener("click", (event) => { if (event.target === ui.imageViewer) closeImageViewer(); });
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeImageViewer(); });
+      window.addEventListener("beforeunload", () => {
+        intentionalClose = true;
+        if (socket && socket.readyState === WebSocket.OPEN) sendSocket({ type: "leave", room, clientId });
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+      });
+
+      loadPreferences();
+      loadPhoneAddress();
+      setTransferEnabled(false);
+    })();
+  </script>
+</body>
+</html>
