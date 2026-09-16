@@ -81,12 +81,16 @@
     .phone-access { margin: -5px 0 21px; padding: 14px; border: 1px solid rgba(99,245,170,.22); border-radius: 15px; background: rgba(99,245,170,.045); }
     .phone-access-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; color: #c9f8df; font-size: .82rem; font-weight: 700; }
     .phone-access-head svg { width: 16px; height: 16px; color: var(--green); }
+    .phone-access-body { display: grid; grid-template-columns: minmax(0, 1fr) 132px; align-items: center; gap: 13px; }
+    .phone-address-pane { min-width: 0; }
     .phone-address-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
     #phoneUrl { min-width: 0; padding: 9px 11px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; color: var(--green); background: #09130f; font-size: .79rem; text-overflow: ellipsis; white-space: nowrap; }
     .copy-address { min-height: 39px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; color: #d9eee3; background: #14231e; font-size: .76rem; font-weight: 700; cursor: pointer; }
     .copy-address:hover:not(:disabled) { border-color: rgba(99,245,170,.5); color: var(--green); }
     .copy-address:disabled { opacity: .45; cursor: not-allowed; }
     .phone-help { margin: 8px 0 0; color: var(--muted); font-size: .73rem; }
+    .phone-qr { display: grid; justify-items: center; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: rgba(255,255,255,.025); font-size: .68rem; text-align: center; }
+    #phoneQr { display: block; width: 116px; height: 116px; border-radius: 5px; background: #fff; image-rendering: pixelated; }
 
     .field { display: grid; gap: 8px; margin-top: 14px; }
     .field > label, .field-label { color: #c6d8cf; font-size: .84rem; font-weight: 650; }
@@ -247,6 +251,8 @@
       .shell { width: calc(100% - 16px); }
       .brand p { display: none; }
       .card-body { padding-top: 20px; padding-bottom: 20px; }
+      .phone-access-body { grid-template-columns: 1fr; }
+      .phone-qr { justify-self: center; width: 148px; }
       .actions { grid-template-columns: 1fr; }
       .send-card-footer { grid-template-columns: 1fr; }
       .send-card-footer .btn { width: 100%; }
@@ -307,11 +313,19 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"></rect><path d="M10 18h4"></path></svg>
               手机访问地址
             </div>
-            <div class="phone-address-row">
-              <code id="phoneUrl">正在获取本机地址…</code>
-              <button id="copyPhoneUrl" class="copy-address" type="button" disabled>复制</button>
+            <div class="phone-access-body">
+              <div class="phone-address-pane">
+                <div class="phone-address-row">
+                  <code id="phoneUrl">正在获取本机地址…</code>
+                  <button id="copyPhoneUrl" class="copy-address" type="button" disabled>复制</button>
+                </div>
+                <p id="phoneHelp" class="phone-help">手机与电脑连接同一个网络后，扫码或打开此地址。</p>
+              </div>
+              <div class="phone-qr" role="img" aria-label="手机访问地址二维码">
+                <canvas id="phoneQr" width="148" height="148"></canvas>
+                <span id="qrLabel">正在生成二维码…</span>
+              </div>
             </div>
-            <p id="phoneHelp" class="phone-help">手机与电脑连接同一个 Wi-Fi 后，在手机浏览器打开此地址。</p>
           </div>
 
           <div class="field">
@@ -330,7 +344,7 @@
             <div class="settings-content">
               <div class="field">
                 <label for="wsEndpoint">传输网络地址</label>
-                <input id="wsEndpoint" type="url" inputmode="url" spellcheck="false" placeholder="ws://192.168.1.2:8787/ws">
+                <input id="wsEndpoint" type="url" inputmode="url" spellcheck="false" placeholder="ws://192.168.1.2:8790/ws">
                 <span class="help">用网页打开时默认连接当前主机的 <code>/ws</code>；直接打开文件时需填写局域网服务器地址。</span>
               </div>
               <div class="field">
@@ -395,17 +409,17 @@
                 </span>
                 发送文件
               </div>
-              <div id="dropZone" class="drop-zone disabled" role="button" aria-disabled="true" aria-label="拖入或选择文件" tabindex="-1">
+              <div id="dropZone" class="drop-zone disabled" role="button" aria-disabled="true" aria-label="拖入、粘贴或选择文件" tabindex="-1">
                 <span class="drop-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5"></path><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"></path></svg>
                 </span>
                 <span>
-                  <span class="drop-title">拖入图片或文件</span>
-                  <span class="drop-copy">支持任意类型；大文件受浏览器内存限制</span>
+                  <span class="drop-title">拖入或粘贴图片、文件</span>
+                  <span class="drop-copy">支持任意类型；粘贴快捷键 Ctrl / ⌘ + V</span>
                 </span>
               </div>
               <div class="send-card-footer">
-                <span class="send-hint">支持同时选择多个文件</span>
+                <span class="send-hint">支持同时选择或粘贴多个文件</span>
                 <label id="fileButton" class="btn btn-primary file-button disabled" for="fileInput" aria-disabled="true" tabindex="-1">选择文件</label>
               </div>
               <input id="fileInput" type="file" multiple disabled>
@@ -445,7 +459,7 @@
         <div>
           <h3>默认连接方式</h3>
           <p>若本页由 <code>http(s)://主机:端口/</code> 提供，默认信令地址为同一主机、同一端口的 <code>/ws</code>。</p>
-          <p>若直接双击打开本 HTML，请在“连接设置”中填写运行于电脑上的局域网 WebSocket 地址，例如 <code>ws://192.168.1.2:8787/ws</code>。</p>
+          <p>若直接双击打开本 HTML，请在“连接设置”中填写运行于电脑上的局域网 WebSocket 地址，例如 <code>ws://192.168.1.2:8790/ws</code>。</p>
           <p>WebSocket 只转发连接描述和网络候选；文字、图片和文件均走端到端加密的 WebRTC 通道。</p>
         </div>
         <div class="protocol">
@@ -486,7 +500,7 @@
         roomCode: $("roomCode"), wsEndpoint: $("wsEndpoint"), iceServers: $("iceServers"),
         randomCode: $("randomCode"), connect: $("connectButton"), disconnect: $("disconnectButton"),
         signalStatus: $("signalStatus"), signalDot: $("signalDot"), peerStatus: $("peerStatus"), peerDot: $("peerDot"), peerPill: $("peerPill"),
-        phoneUrl: $("phoneUrl"), copyPhoneUrl: $("copyPhoneUrl"), phoneHelp: $("phoneHelp"),
+        phoneUrl: $("phoneUrl"), copyPhoneUrl: $("copyPhoneUrl"), phoneHelp: $("phoneHelp"), phoneQr: $("phoneQr"), qrLabel: $("qrLabel"),
         text: $("textMessage"), sendText: $("sendText"), fileInput: $("fileInput"), fileButton: $("fileButton"), dropZone: $("dropZone"),
         empty: $("emptyFeed"), list: $("activityList"), clear: $("clearFeed"),
         connectionEmpty: $("connectionEmpty"), connectionList: $("connectionList"), toasts: $("toastRegion"),
@@ -521,11 +535,13 @@
         if (location.protocol === "http:" || location.protocol === "https:") {
           return `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
         }
-        return "ws://192.168.1.2:8787/ws";
+        return "ws://192.168.1.2:8790/ws";
       }
 
       function loadPreferences() {
-        ui.wsEndpoint.value = localStorage.getItem("lanDrop.ws") || defaultEndpoint();
+        const savedEndpoint = localStorage.getItem("lanDrop.ws") || "";
+        const usesOldPort = /^wss?:\/\/[^/]+:8787\/ws\/?$/i.test(savedEndpoint);
+        ui.wsEndpoint.value = usesOldPort ? defaultEndpoint() : (savedEndpoint || defaultEndpoint());
         ui.iceServers.value = localStorage.getItem("lanDrop.ice") || "";
         ui.roomCode.value = localStorage.getItem("lanDrop.room") || "";
       }
@@ -566,6 +582,158 @@
         ui.phoneUrl.textContent = address;
         ui.phoneUrl.title = address;
         ui.copyPhoneUrl.disabled = false;
+        try {
+          drawQrCode(ui.phoneQr, address);
+          ui.qrLabel.textContent = "扫码打开网页";
+        } catch {
+          ui.qrLabel.textContent = "二维码生成失败";
+        }
+      }
+
+      function drawQrCode(canvas, text) {
+        const version = 3;
+        const size = 17 + version * 4;
+        const dataCodewords = 55;
+        const eccCodewords = 15;
+        const bytes = new TextEncoder().encode(text);
+        if (bytes.length > 53) throw new Error("address too long");
+
+        const bits = [];
+        const appendBits = (value, length) => {
+          for (let shift = length - 1; shift >= 0; shift--) bits.push((value >>> shift) & 1);
+        };
+        appendBits(4, 4);
+        appendBits(bytes.length, 8);
+        bytes.forEach(value => appendBits(value, 8));
+        const capacity = dataCodewords * 8;
+        for (let index = 0; index < Math.min(4, capacity - bits.length); index++) bits.push(0);
+        while (bits.length % 8) bits.push(0);
+
+        const data = [];
+        for (let index = 0; index < bits.length; index += 8) {
+          let value = 0;
+          for (let offset = 0; offset < 8; offset++) value = (value << 1) | bits[index + offset];
+          data.push(value);
+        }
+        for (let pad = 0; data.length < dataCodewords; pad++) data.push(pad % 2 ? 0x11 : 0xec);
+
+        const exp = new Uint8Array(512);
+        const log = new Uint8Array(256);
+        let value = 1;
+        for (let index = 0; index < 255; index++) {
+          exp[index] = value;
+          log[value] = index;
+          value <<= 1;
+          if (value & 0x100) value ^= 0x11d;
+        }
+        for (let index = 255; index < exp.length; index++) exp[index] = exp[index - 255];
+        const multiply = (left, right) => left && right ? exp[log[left] + log[right]] : 0;
+        const multiplyPolynomials = (left, right) => {
+          const result = new Array(left.length + right.length - 1).fill(0);
+          for (let row = 0; row < left.length; row++) {
+            for (let column = 0; column < right.length; column++) result[row + column] ^= multiply(left[row], right[column]);
+          }
+          return result;
+        };
+        let generator = [1];
+        for (let index = 0; index < eccCodewords; index++) generator = multiplyPolynomials(generator, [1, exp[index]]);
+        const remainder = data.concat(new Array(eccCodewords).fill(0));
+        for (let index = 0; index < data.length; index++) {
+          const factor = remainder[index];
+          if (!factor) continue;
+          for (let offset = 0; offset < generator.length; offset++) remainder[index + offset] ^= multiply(generator[offset], factor);
+        }
+        const codewords = data.concat(remainder.slice(data.length));
+
+        const modules = Array.from({ length: size }, () => Array(size).fill(null));
+        const setFinder = (top, left) => {
+          for (let row = -1; row <= 7; row++) {
+            for (let column = -1; column <= 7; column++) {
+              const y = top + row;
+              const x = left + column;
+              if (y < 0 || y >= size || x < 0 || x >= size) continue;
+              const inside = row >= 0 && row <= 6 && column >= 0 && column <= 6;
+              modules[y][x] = inside && (row === 0 || row === 6 || column === 0 || column === 6 || (row >= 2 && row <= 4 && column >= 2 && column <= 4));
+            }
+          }
+        };
+        setFinder(0, 0);
+        setFinder(0, size - 7);
+        setFinder(size - 7, 0);
+
+        for (let index = 8; index < size - 8; index++) {
+          if (modules[6][index] === null) modules[6][index] = index % 2 === 0;
+          if (modules[index][6] === null) modules[index][6] = index % 2 === 0;
+        }
+        for (let row = -2; row <= 2; row++) {
+          for (let column = -2; column <= 2; column++) {
+            modules[22 + row][22 + column] = Math.max(Math.abs(row), Math.abs(column)) !== 1;
+          }
+        }
+
+        const bchDigit = number => {
+          let digit = 0;
+          while (number) { digit++; number >>>= 1; }
+          return digit;
+        };
+        const formatData = 1 << 3;
+        let formatRemainder = formatData << 10;
+        while (bchDigit(formatRemainder) >= bchDigit(0x537)) {
+          formatRemainder ^= 0x537 << (bchDigit(formatRemainder) - bchDigit(0x537));
+        }
+        const formatBits = ((formatData << 10) | formatRemainder) ^ 0x5412;
+        for (let index = 0; index < 15; index++) {
+          const dark = ((formatBits >>> index) & 1) === 1;
+          if (index < 6) modules[index][8] = dark;
+          else if (index < 8) modules[index + 1][8] = dark;
+          else modules[size - 15 + index][8] = dark;
+
+          if (index < 8) modules[8][size - index - 1] = dark;
+          else if (index < 9) modules[8][15 - index] = dark;
+          else modules[8][15 - index - 1] = dark;
+        }
+        modules[size - 8][8] = true;
+
+        let row = size - 1;
+        let direction = -1;
+        let byteIndex = 0;
+        let bitIndex = 7;
+        for (let column = size - 1; column > 0; column -= 2) {
+          if (column === 6) column--;
+          while (true) {
+            for (let offset = 0; offset < 2; offset++) {
+              const x = column - offset;
+              if (modules[row][x] !== null) continue;
+              let dark = byteIndex < codewords.length && ((codewords[byteIndex] >>> bitIndex) & 1) === 1;
+              if ((row + x) % 2 === 0) dark = !dark;
+              modules[row][x] = dark;
+              bitIndex--;
+              if (bitIndex < 0) { byteIndex++; bitIndex = 7; }
+            }
+            row += direction;
+            if (row < 0 || row >= size) {
+              row -= direction;
+              direction = -direction;
+              break;
+            }
+          }
+        }
+
+        const quiet = 4;
+        const scale = 4;
+        const side = (size + quiet * 2) * scale;
+        canvas.width = side;
+        canvas.height = side;
+        const context = canvas.getContext("2d");
+        context.imageSmoothingEnabled = false;
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, side, side);
+        context.fillStyle = "#000";
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            if (modules[y][x]) context.fillRect((x + quiet) * scale, (y + quiet) * scale, scale, scale);
+          }
+        }
       }
 
       async function copyPhoneAddress() {
@@ -1133,6 +1301,26 @@
         processQueue();
       }
 
+      function handlePastedFiles(event) {
+        const clipboard = event.clipboardData;
+        if (!clipboard) return;
+        const files = [];
+        for (const item of Array.from(clipboard.items || [])) {
+          if (item.kind !== "file") continue;
+          const file = item.getAsFile();
+          if (file) files.push(file);
+        }
+        if (!files.length) files.push(...Array.from(clipboard.files || []));
+        if (!files.length) return;
+        event.preventDefault();
+        if (!dataChannelReady()) {
+          toast("请先完成配对，再粘贴图片或文件", true);
+          return;
+        }
+        enqueueFiles(files);
+        toast(files.length === 1 ? `已加入发送：${files[0].name || "粘贴内容"}` : `已加入 ${files.length} 个粘贴文件`);
+      }
+
       async function processQueue() {
         if (sending || !dataChannelReady()) return;
         sending = true;
@@ -1221,6 +1409,7 @@
         ui.dropZone.addEventListener(name, (event) => { event.preventDefault(); ui.dropZone.classList.remove("drag"); });
       }
       ui.dropZone.addEventListener("drop", (event) => { if (!ui.fileInput.disabled) enqueueFiles(event.dataTransfer.files); });
+      document.addEventListener("paste", handlePastedFiles);
       ui.clear.addEventListener("click", () => { ui.list.replaceChildren(); ui.empty.hidden = false; });
       ui.viewerClose.addEventListener("click", closeImageViewer);
       ui.imageViewer.addEventListener("click", (event) => { if (event.target === ui.imageViewer) closeImageViewer(); });

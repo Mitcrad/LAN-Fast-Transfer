@@ -2,7 +2,9 @@ param([switch]$NoBrowser)
 
 $ErrorActionPreference = 'Stop'
 
-$port = 8787
+$preferredPort = 8790
+$lastFallbackPort = 8899
+$port = $null
 $htmlPath = Join-Path $PSScriptRoot 'lan-drop.html'
 
 if (-not (Test-Path -LiteralPath $htmlPath)) {
@@ -471,13 +473,37 @@ try {
     exit 1
 }
 
-$server = [LanDropServer]::new($htmlPath, $port)
-
 try {
-    $server.Start()
+    $server = $null
+    foreach ($candidatePort in $preferredPort..$lastFallbackPort) {
+        $candidateServer = [LanDropServer]::new($htmlPath, $candidatePort)
+        try {
+            $candidateServer.Start()
+            $server = $candidateServer
+            $port = $candidatePort
+            break
+        } catch {
+            try { $candidateServer.Stop() } catch { }
+            $socketError = $_.Exception
+            while ($socketError -and $socketError -isnot [System.Net.Sockets.SocketException]) {
+                $socketError = $socketError.InnerException
+            }
+            if (-not $socketError -or $socketError.SocketErrorCode -ne [System.Net.Sockets.SocketError]::AddressAlreadyInUse) {
+                throw
+            }
+        }
+    }
+
+    if (-not $server) {
+        throw "No available port was found from $preferredPort to $lastFallbackPort."
+    }
+
     Write-Host ''
     Write-Host '  LAN Drop is running' -ForegroundColor Green
     Write-Host '  ----------------------------------------'
+    if ($port -ne $preferredPort) {
+        Write-Host "  Port $preferredPort is busy; switched automatically to $port." -ForegroundColor Yellow
+    }
     Write-Host "  COMPUTER: http://localhost:$port/" -ForegroundColor Cyan
 
     $addresses = [System.Net.Dns]::GetHostAddresses([System.Net.Dns]::GetHostName()) |
@@ -500,9 +526,9 @@ try {
     while ($true) { Start-Sleep -Seconds 1 }
 } catch {
     Write-Host ''
-    Write-Host 'Startup failed. Port 8787 may already be in use.' -ForegroundColor Red
+    Write-Host 'Startup failed. No local transfer port could be opened.' -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor DarkRed
     Read-Host 'Press Enter to exit'
 } finally {
-    $server.Stop()
+    if ($server) { $server.Stop() }
 }
